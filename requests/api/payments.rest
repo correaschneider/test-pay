@@ -1,0 +1,31 @@
+### Create Payment
+POST http://localhost:3000/payments
+Content-Type: application/json
+
+{
+    "customerId": "0826b734-a279-427f-a63b-a5b657a5b154",
+    "billingType": "BOLETO",
+    "value": 100,
+    "dueDate": "2025-02-28"
+}
+
+### Get Payment by ID
+GET http://localhost:3000/payments/d966df1a-1fef-4b0f-9f61-3be35a031e39
+
+### Handle Webhook
+POST http://localhost:3000/payments/webhook
+Content-Type: application/json
+
+{
+    "event": "PAYMENT_RECEIVED",
+    "payment": {
+        "id": "pay_2kzjs2w8azj39rvz",
+        "customer": "cus_000006517423",
+        "value": 100,
+        "netValue": 97,
+        "billingType": "BOLETO",
+        "status": "RECEIVED",
+        "dueDate": "2025-02-28",
+        "paymentDate": "2025-02-14"
+    }
+}

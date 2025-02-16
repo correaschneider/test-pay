@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id            String    @id @default(uuid())
+  externalId    String    @unique // ID do Asaas
+  name          String
+  cpfCnpj       String    @unique
+  email         String
+  phone         String?
+  mobilePhone   String?
+  address       String?
+  addressNumber String?
+  complement    String?
+  province      String?
+  postalCode    String?
+  payments      Payment[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Payment {
+  id            String    @id @default(uuid())
+  externalId    String    @unique // ID do Asaas
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  customerId    String
+  value         Decimal
+  status        String
+  billingType   String
+  dueDate       DateTime
+  paidAt        DateTime?
+  description   String?
+  bankSlipUrl   String?
+  pixQrCode     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([customerId])
+}

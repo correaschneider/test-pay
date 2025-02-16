@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: .docker/backend
+      dockerfile: Dockerfile
+    ports:
+      - ${BACKEND_PORT}:${BACKEND_PORT}
+    volumes:
+      - ./projects/backend:/app
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=${BACKEND_NODE_ENV}
+      - PORT=${BACKEND_PORT}
+      - DATABASE_URL=mysql://root:${DATABASE_MYSQL_ROOT_PASSWORD}@database:${DATABASE_MYSQL_PORT}/${DATABASE_MYSQL_DATABASE}
+      # - DATABASE_URL=mysql://${DATABASE_MYSQL_USER}:${DATABASE_MYSQL_PASSWORD}@database:${DATABASE_MYSQL_PORT}/${DATABASE_MYSQL_DATABASE}
+    depends_on:
+      - database
+    networks:
+      - pay-network
+    command: sh -c "npm install && npm run start:dev"
+
+  database:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DATABASE_MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DATABASE_MYSQL_DATABASE}
+      - MYSQL_USER=${DATABASE_MYSQL_USER}
+      - MYSQL_PASSWORD=${DATABASE_MYSQL_PASSWORD}
+    ports:
+      - ${DATABASE_MYSQL_PORT}:3306
+    volumes:
+      - ./.docker/mysql/data:/var/lib/mysql
+    restart: always
+    networks:
+      - pay-network
+
+  frontend:
+    build:
+      context: .docker/frontend
+      dockerfile: Dockerfile
+    ports:
+      - ${FRONTEND_PORT}:${FRONTEND_PORT}
+    volumes:
+      - ./projects/frontend:/app
+    environment:
+      - NODE_ENV=${FRONTEND_NODE_ENV}
+      - PORT=${FRONTEND_PORT}
+    depends_on:
+      - backend
+    networks:
+      - pay-network
+
+networks:
+  pay-network:
+    name: pay-network

@@ -1,0 +1,6 @@
+.env
+Teste NodeJS - Pay
+Teste NodeJS - Pay.pdf
+.docker/mysql/data
+node_modules/
+dist/

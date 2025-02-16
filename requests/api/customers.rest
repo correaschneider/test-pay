@@ -1,0 +1,15 @@
+@host = http://localhost:3000
+
+### Create a new customer
+POST {{host}}/customers
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "cpfCnpj": "29676655090",
+  "email": "john@example.com"
+}
+
+### Get customer by cpfCnpj
+GET {{host}}/customers/29676655090
+
