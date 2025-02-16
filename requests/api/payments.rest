@@ -1,20 +1,26 @@
+@baseUrl = http://localhost:3000/payments
+
+@customerId = 55128752-bb46-4247-b608-248f0150c521
+
 ### Create Payment
-POST http://localhost:3000/payments
+# @name createPaymentBill
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
-    "customerId": "0826b734-a279-427f-a63b-a5b657a5b154",
+    "customerId": "{{customerId}}",
     "billingType": "BILL",
     "value": 100,
     "dueDate": "2025-02-28"
 }
 
 ### Create Payment with Credit Card
-POST http://localhost:3000/payments
+# @name createPaymentCreditCard
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
-    "customerId": "0826b734-a279-427f-a63b-a5b657a5b154",
+    "customerId": "{{customerId}}",
     "billingType": "CREDIT_CARD",
     "value": 101,
     "dueDate": "2025-02-28",
@@ -28,31 +34,53 @@ Content-Type: application/json
 }
 
 ### Create Payment with PIX
-POST http://localhost:3000/payments
+# @name createPaymentPix
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
-    "customerId": "0826b734-a279-427f-a63b-a5b657a5b154",
+    "customerId": "{{customerId}}",
     "billingType": "PIX",
     "value": 102,
     "dueDate": "2025-02-28"
 }
 
-### Get Payment by ID
-GET http://localhost:3000/payments/d966df1a-1fef-4b0f-9f61-3be35a031e39
+### Bill Payment
+@paymentId = {{createPaymentBill.response.body.id}}
+@billingType = {{createPaymentBill.request.body.billingType}}
+@value = {{createPaymentBill.request.body.value}}
+@netValue = {{createPaymentBill.response.body.gatewayResponse.netValue}}
 
+### Credit Card Payment
+# @paymentId = {{createPaymentCreditCard.response.body.id}}
+# @billingType = {{createPaymentCreditCard.request.body.billingType}}
+# @value = {{createPaymentCreditCard.request.body.value}}
+# @netValue = {{createPaymentCreditCard.response.body.gatewayResponse.netValue}}
+
+### PIX Payment
+# @paymentId = {{createPaymentPix.response.body.id}}
+# @billingType = {{createPaymentPix.request.body.billingType}}
+# @value = {{createPaymentPix.request.body.value}}
+# @netValue = {{createPaymentPix.response.body.gatewayResponse.netValue}}
+
+### Get Payment by ID
+# @name getPaymentById
+GET {{baseUrl}}/{{paymentId}}
+
+@externalId = {{getPaymentById.response.body.externalId}}
+@externalCustomerId = {{getPaymentById.response.body.gatewayResponse.customer}}
 ### Handle Webhook
-POST http://localhost:3000/payments/webhook
+POST {{baseUrl}}/webhook
 Content-Type: application/json
 
 {
     "event": "PAYMENT_RECEIVED",
     "payment": {
-        "id": "pay_2kzjs2w8azj39rvz",
-        "customer": "cus_000006517423",
-        "value": 100,
-        "netValue": 97,
-        "billingType": "BOLETO",
+        "id": "{{externalId}}",
+        "customer": "{{externalCustomerId}}",
+        "value": {{value}},
+        "netValue": "{{netValue}}",
+        "billingType": "{{billingType}}",
         "status": "RECEIVED",
         "dueDate": "2025-02-28",
         "paymentDate": "2025-02-14"

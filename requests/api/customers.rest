@@ -1,15 +1,17 @@
-@host = http://localhost:3000
+@baseUrl = http://localhost:3000/customers
 
 ### Create a new customer
-POST {{host}}/customers
+# @name createCustomer
+POST {{baseUrl}}
 Content-Type: application/json
 
 {
-  "name": "John Doe",
-  "cpfCnpj": "29676655090",
-  "email": "john@example.com"
+  "name": "Andreia Antônia Bernardes",
+  "cpfCnpj": "44581048028",
+  "email": "andreia.antonia.bernardes@localhost.com"
 }
 
 ### Get customer by cpfCnpj
-GET {{host}}/customers/29676655090
+# @name getCustomer
+GET {{baseUrl}}/{{createCustomer.response.body.cpfCnpj}}
 

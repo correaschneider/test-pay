@@ -18,14 +18,14 @@ export class CustomersService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
+  async create(createCustomerDto: CreateCustomerDto): Promise<PrismaCustomer> {
     try {
       const response: { data: Customer } =
         await this.asaasService.createCustomer(createCustomerDto);
       const customer = response.data;
 
       // Persiste no banco local
-      await this.prisma.customer.create({
+      const prismaCustomer = await this.prisma.customer.create({
         data: {
           externalId: customer.id,
           name: customer.name,
@@ -41,35 +41,19 @@ export class CustomersService {
         },
       });
 
-      return customer;
+      return prismaCustomer;
     } catch (error: unknown) {
       this.logger.error(
-        'Error creating customer',
+        'Erro ao criar o cliente',
         error instanceof Error ? error.stack : 'Unknown error',
       );
       throw new InternalServerErrorException(
-        `Error creating customer: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Erro ao criar o cliente: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
 
-  async findByCpfCnpj(cpfCnpj: string): Promise<Customer> {
-    try {
-      const response: { data: Customer } =
-        await this.asaasService.findCustomer(cpfCnpj);
-      return response.data;
-    } catch (error: unknown) {
-      this.logger.error(
-        'Error finding customer',
-        error instanceof Error ? error.stack : 'Unknown error',
-      );
-      throw new InternalServerErrorException(
-        `Error finding customer: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    }
-  }
-
-  async findLocalByCpfCnpj(cpfCnpj: string): Promise<PrismaCustomer> {
+  async findByCpfCnpj(cpfCnpj: string): Promise<PrismaCustomer> {
     try {
       const customer = await this.prisma.customer.findUnique({
         where: { cpfCnpj },
@@ -79,53 +63,17 @@ export class CustomersService {
       });
 
       if (!customer) {
-        throw new Error('Customer not found');
+        throw new Error('Cliente não encontrado');
       }
 
       return customer;
     } catch (error: unknown) {
       this.logger.error(
-        'Error finding local customer',
+        'Erro ao buscar o cliente',
         error instanceof Error ? error.stack : 'Unknown error',
       );
       throw new InternalServerErrorException(
-        `Error finding local customer: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    }
-  }
-
-  async findAll(params: {
-    skip?: number;
-    take?: number;
-    name?: string;
-    cpfCnpj?: string;
-  }): Promise<PrismaCustomer[]> {
-    const { skip, take, name, cpfCnpj } = params;
-
-    try {
-      return await this.prisma.customer.findMany({
-        skip,
-        take,
-        where: {
-          AND: [
-            name ? { name: { contains: name } } : {},
-            cpfCnpj ? { cpfCnpj: { contains: cpfCnpj } } : {},
-          ],
-        },
-        include: {
-          payments: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-    } catch (error: unknown) {
-      this.logger.error(
-        'Error finding customers',
-        error instanceof Error ? error.stack : 'Unknown error',
-      );
-      throw new InternalServerErrorException(
-        `Error finding customers: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Erro ao buscar o cliente: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }

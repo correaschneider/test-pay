@@ -25,6 +25,12 @@ model Customer {
   updatedAt     DateTime  @updatedAt
 }
 
+enum BillingType {
+  BILL
+  CREDIT_CARD
+  PIX
+}
+
 model Payment {
   id            String    @id @default(uuid())
   externalId    String    @unique // ID do Asaas
@@ -32,12 +38,13 @@ model Payment {
   customerId    String
   value         Decimal
   status        String
-  billingType   String
+  billingType   BillingType
   dueDate       DateTime
   paidAt        DateTime?
   description   String?
   bankSlipUrl   String?
   pixQrCode     String?
+  gatewayResponse Json?   @db.Json
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

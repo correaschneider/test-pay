@@ -23,7 +23,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
+  async create(createPaymentDto: CreatePaymentDto): Promise<PrismaPayment> {
     try {
       const customer = await this.prisma.customer.findUnique({
         where: { id: createPaymentDto.customerId },
@@ -46,21 +46,22 @@ export class PaymentsService {
         customer,
       );
 
-      await this.prisma.payment.create({
+      const createdPayment = await this.prisma.payment.create({
         data: {
           externalId: payment.id,
           customerId: customer.id,
           value: payment.value,
           status: payment.status,
-          billingType: payment.billingType,
+          billingType: createPaymentDto.billingType,
           dueDate: new Date(payment.dueDate),
           description: payment.description,
           bankSlipUrl: payment.bankSlipUrl,
           pixQrCode: payment.pixQrCode,
+          gatewayResponse: payment as unknown as Prisma.InputJsonValue,
         },
       });
 
-      return payment;
+      return createdPayment;
     } catch (error: unknown) {
       const asaasError = error as AxiosError<{
         errors: Array<{ description: string }>;
@@ -81,7 +82,9 @@ export class PaymentsService {
     }
   }
 
-  async findById(id: string): Promise<Payment> {
+  async findById(
+    id: string,
+  ): Promise<PrismaPayment & { gatewayResponse: Prisma.JsonValue }> {
     try {
       const payment = await this.prisma.payment.findUnique({
         where: { id },
@@ -94,7 +97,10 @@ export class PaymentsService {
       const response: Payment = await this.paymentGateway.getPayment(
         payment.externalId,
       );
-      return response;
+      return {
+        ...payment,
+        gatewayResponse: response as unknown as Prisma.JsonValue,
+      };
     } catch (error: unknown) {
       this.logger.error(
         'Erro ao buscar o pagamento',
@@ -115,9 +121,10 @@ export class PaymentsService {
       const response: Payment = await this.paymentGateway.getPayment(
         webhook.payment.id,
       );
+
       if (!response) {
         throw new InternalServerErrorException(
-          `Pagamento ${webhook.payment.id} não encontrado na Asaas`,
+          `Pagamento ${webhook.payment.id} não encontrado no gateway`,
         );
       }
 
@@ -128,11 +135,11 @@ export class PaymentsService {
       }
     } catch (error: unknown) {
       this.logger.error(
-        `Erro ao buscar o pagamento na Asaas: ${webhook.payment.id}`,
+        `Erro ao buscar o pagamento no gateway: ${error instanceof Error ? error.message : 'Unknown error'}`,
         error instanceof Error ? error.stack : 'Unknown error',
       );
       throw new InternalServerErrorException(
-        `Erro ao buscar o pagamento na Asaas: ${webhook.payment.id}`,
+        `Erro ao buscar o pagamento no gateway: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
 
