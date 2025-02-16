@@ -6,7 +6,7 @@ import {
   Matches,
   Validate,
 } from 'class-validator';
-import { validateDocument } from '../../../shared/helpers/document.helper';
+import { IsDocumentValidConstraint } from '../validators/document.validator';
 
 export class CreateCustomerDto {
   @IsString({ message: 'Nome deve ser uma string' })
@@ -17,9 +17,7 @@ export class CreateCustomerDto {
   @Matches(/^\d{11}$|^\d{14}$/, {
     message: 'CPF deve ter 11 dígitos ou CNPJ deve ter 14 dígitos',
   })
-  @Validate((value: string) => validateDocument(value), {
-    message: 'CPF/CNPJ inválido',
-  })
+  @Validate(IsDocumentValidConstraint)
   cpfCnpj: string;
 
   @IsEmail({}, { message: 'Email deve ser um endereço de email válido' })
