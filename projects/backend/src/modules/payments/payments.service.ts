@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -6,20 +7,19 @@ import {
 import type { Payment as PrismaPayment } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { AxiosError } from 'axios';
-import { AsaasService } from '../../shared/asaas/asaas.service';
-import { PrismaService } from '../../shared/prisma/prisma.service';
+import { PrismaService } from 'src/shared/prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { AsaasPaymentDto } from './interfaces/asaas-payment.interface';
+import { PaymentGateway } from './interfaces/payment-gateway.interface';
 import { PaymentWebhook } from './interfaces/payment-webhook.interface';
 import { Payment } from './interfaces/payment.interface';
-import { BillingTypeTransformer } from './transformers/billing-type.transformer';
 
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
   constructor(
-    private readonly asaasService: AsaasService,
+    @Inject('PaymentGateway')
+    private readonly paymentGateway: PaymentGateway,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -41,27 +41,10 @@ export class PaymentsService {
         );
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { customerId, ...paymentData } = createPaymentDto;
-      const asaasPaymentDto: AsaasPaymentDto = {
-        ...paymentData,
-        billingType: BillingTypeTransformer.toAsaas(
-          createPaymentDto.billingType,
-        ),
-        customer: customer.externalId,
-      };
-
-      if (asaasPaymentDto.billingType === 'CREDIT_CARD') {
-        asaasPaymentDto.creditCardHolderInfo = {
-          name: createPaymentDto?.creditCard?.holderName || customer.name,
-          email: customer.email,
-          cpfCnpj: customer.cpfCnpj,
-        };
-      }
-
-      const response: { data: Payment } =
-        await this.asaasService.createPayment(asaasPaymentDto);
-      const payment = response.data;
+      const payment = await this.paymentGateway.createPayment(
+        createPaymentDto,
+        customer,
+      );
 
       await this.prisma.payment.create({
         data: {
@@ -108,10 +91,10 @@ export class PaymentsService {
         throw new Error(`Pagamento ${id} não encontrado`);
       }
 
-      const response: { data: Payment } = await this.asaasService.getPayment(
+      const response: Payment = await this.paymentGateway.getPayment(
         payment.externalId,
       );
-      return response.data;
+      return response;
     } catch (error: unknown) {
       this.logger.error(
         'Erro ao buscar o pagamento',
@@ -129,16 +112,16 @@ export class PaymentsService {
     );
 
     try {
-      const response: { data: Payment } = await this.asaasService.getPayment(
+      const response: Payment = await this.paymentGateway.getPayment(
         webhook.payment.id,
       );
-      if (!response.data) {
+      if (!response) {
         throw new InternalServerErrorException(
           `Pagamento ${webhook.payment.id} não encontrado na Asaas`,
         );
       }
 
-      if (response.data.status !== 'RECEIVED') {
+      if (response.status !== 'RECEIVED') {
         throw new InternalServerErrorException(
           `Pagamento ${webhook.payment.id} não está com status RECEIVED`,
         );

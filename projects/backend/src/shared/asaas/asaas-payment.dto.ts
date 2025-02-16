@@ -1,5 +1,5 @@
-import { CreditCardDto } from '../dto/create-payment.dto';
-import { AsaasBillingType } from '../transformers/billing-type.transformer';
+import { CreditCardDto } from '../../modules/payments/dto/create-payment.dto';
+import { AsaasBillingType } from './billing-type.transformer';
 
 export interface AsaasPaymentDto {
   customer: string;

@@ -2,7 +2,6 @@ import { InternalServerErrorException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { Payment as PrismaPayment } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import { AsaasService } from '../../shared/asaas/asaas.service';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentWebhook } from './interfaces/payment-webhook.interface';
@@ -20,6 +19,14 @@ describe('PaymentsService', () => {
     status: 'PENDING',
     dueDate: '2024-12-31',
     description: 'Test payment',
+  };
+
+  const mockCustomer = {
+    id: 'customer_id',
+    externalId: 'cus_123',
+    name: 'John Doe',
+    email: 'john@example.com',
+    cpfCnpj: '12345678901',
   };
 
   const mockPaymentWebhook: PaymentWebhook = {
@@ -41,10 +48,19 @@ describe('PaymentsService', () => {
     getPayment: jest.fn().mockResolvedValue({ data: mockPayment }),
   };
 
+  const mockPaymentGateway = {
+    createPayment: jest.fn().mockResolvedValue(mockPayment),
+    getPayment: jest.fn().mockResolvedValue(mockPayment),
+  };
+
   const mockPrismaService = {
     $transaction: jest.fn(),
+    customer: {
+      findUnique: jest.fn().mockResolvedValue(mockCustomer),
+    },
     payment: {
       update: jest.fn(),
+      create: jest.fn().mockResolvedValue({ id: 'local_payment_id' }),
     },
   };
 
@@ -53,8 +69,8 @@ describe('PaymentsService', () => {
       providers: [
         PaymentsService,
         {
-          provide: AsaasService,
-          useValue: mockAsaasService,
+          provide: 'PaymentGateway',
+          useValue: mockPaymentGateway,
         },
         {
           provide: PrismaService,
@@ -69,35 +85,59 @@ describe('PaymentsService', () => {
   describe('create', () => {
     it('should create a payment successfully', async () => {
       const createPaymentDto: CreatePaymentDto = {
-        customer: 'cus_123',
+        customerId: 'customer_id',
         value: 100,
-        billingType: 'BOLETO',
+        billingType: 'BILL',
         dueDate: '2024-12-31',
-        description: 'Test payment',
       };
-
-      mockAsaasService.createPayment.mockResolvedValue({ data: mockPayment });
 
       const result = await service.create(createPaymentDto);
 
       expect(result).toEqual(mockPayment);
-      expect(mockAsaasService.createPayment).toHaveBeenCalledWith(
+      expect(mockPaymentGateway.createPayment).toHaveBeenCalledWith(
         createPaymentDto,
+        mockCustomer,
       );
+      expect(mockPrismaService.payment.create).toHaveBeenCalled();
     });
 
-    it('should throw InternalServerErrorException on create error', async () => {
+    it('should throw error when customer not found', async () => {
+      mockPrismaService.customer.findUnique.mockResolvedValueOnce(null);
+
       const createPaymentDto: CreatePaymentDto = {
-        customer: 'cus_123',
+        customerId: 'invalid_id',
         value: 100,
-        billingType: 'BOLETO',
+        billingType: 'BILL',
         dueDate: '2024-12-31',
       };
 
-      mockAsaasService.createPayment.mockRejectedValue(new Error('API Error'));
+      await expect(service.create(createPaymentDto)).rejects.toThrow(
+        'Customer invalid_id não encontrado',
+      );
+    });
+
+    it('should throw error when creating credit card payment without cpf', async () => {
+      const customerWithoutCpf = { ...mockCustomer, cpfCnpj: null };
+      mockPrismaService.customer.findUnique.mockResolvedValueOnce(
+        customerWithoutCpf,
+      );
+
+      const createPaymentDto: CreatePaymentDto = {
+        customerId: 'customer_id',
+        value: 100,
+        billingType: 'CREDIT_CARD',
+        dueDate: '2024-12-31',
+        creditCard: {
+          number: '4111111111111111',
+          holderName: 'John Doe',
+          expirationMonth: 12,
+          expirationYear: 2025,
+          ccv: '123',
+        },
+      };
 
       await expect(service.create(createPaymentDto)).rejects.toThrow(
-        InternalServerErrorException,
+        'CPF/CNPJ é obrigatório para pagamentos com cartão de crédito',
       );
     });
   });

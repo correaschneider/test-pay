@@ -38,7 +38,6 @@ Content-Type: application/json
     "dueDate": "2025-02-28"
 }
 
-
 ### Get Payment by ID
 GET http://localhost:3000/payments/d966df1a-1fef-4b0f-9f61-3be35a031e39
 

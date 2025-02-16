@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
 import { Customer } from '../../modules/customers/interfaces/customer.interface';
-import { AsaasErrorLog } from './interfaces/asaas-error.interface';
+import { AsaasErrorLog } from './asaas-error.interface';
 
 @Injectable()
 export class AsaasService implements OnModuleInit {
