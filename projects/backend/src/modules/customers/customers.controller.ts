@@ -11,8 +11,18 @@ export class CustomersController {
     return this.customersService.create(createCustomerDto);
   }
 
+  @Get(':id')
+  findById(@Param('id') id: string) {
+    return this.customersService.findById(id);
+  }
+
   @Get(':cpfCnpj')
   findByCpfCnpj(@Param('cpfCnpj') cpfCnpj: string) {
     return this.customersService.findByCpfCnpj(cpfCnpj);
+  }
+
+  @Get()
+  findAll() {
+    return this.customersService.findAll();
   }
 }

@@ -9,4 +9,5 @@ export interface Payment {
   externalReference?: string;
   pixQrCode?: string;
   bankSlipUrl?: string;
+  paymentDate?: string;
 }

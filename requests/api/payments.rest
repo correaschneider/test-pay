@@ -10,7 +10,7 @@ Content-Type: application/json
 {
     "customerId": "{{customerId}}",
     "billingType": "BILL",
-    "value": 100,
+    "value": 100.26,
     "dueDate": "2025-02-28"
 }
 

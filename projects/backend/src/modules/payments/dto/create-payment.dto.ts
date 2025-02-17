@@ -48,7 +48,12 @@ export class CreatePaymentDto {
   })
   billingType: 'BILL' | 'CREDIT_CARD' | 'PIX';
 
-  @IsNumber()
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message: 'Valor deve ser um número com até 2 casas decimais',
+    },
+  )
   value: number;
 
   @IsOptional()

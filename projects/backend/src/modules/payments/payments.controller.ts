@@ -17,6 +17,11 @@ export class PaymentsController {
     return this.paymentsService.findById(id);
   }
 
+  @Get('customer/:customerId')
+  findByCustomerId(@Param('customerId') customerId: string) {
+    return this.paymentsService.findByCustomerId(customerId);
+  }
+
   @Post('webhook')
   handleWebhook(@Body() webhook: PaymentWebhook) {
     return this.paymentsService.handleWebhook(webhook);

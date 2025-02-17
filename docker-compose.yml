@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: .docker/backend
+      context: .docker/nestjs
       dockerfile: Dockerfile
     ports:
       - ${BACKEND_PORT}:${BACKEND_PORT}
@@ -35,17 +35,28 @@ services:
     networks:
       - pay-network
 
+  # frontend:
+  #   build:
+  #     context: .docker/frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - ${NEXT_PUBLIC_FRONTEND_PORT}:${NEXT_PUBLIC_FRONTEND_PORT}
+  #   volumes:
+  #     - ./projects/frontend:/app
+  #     - ./.env:/app/.env.local
+  #   depends_on:
+  #     - backend
+  #   command: sh -c "npm install && npx next dev --port ${NEXT_PUBLIC_FRONTEND_PORT}"
+  #   networks:
+  #     - pay-network
+
   frontend:
-    build:
-      context: .docker/frontend
-      dockerfile: Dockerfile
+    image: nginx:latest
+    working_dir: /usr/share/nginx/html
     ports:
-      - ${FRONTEND_PORT}:${FRONTEND_PORT}
+      - ${FRONTEND_PORT}:80
     volumes:
-      - ./projects/frontend:/app
-    environment:
-      - NODE_ENV=${FRONTEND_NODE_ENV}
-      - PORT=${FRONTEND_PORT}
+      - ./projects/frontend:/usr/share/nginx/html
     depends_on:
       - backend
     networks:

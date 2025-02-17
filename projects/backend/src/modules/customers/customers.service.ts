@@ -20,6 +20,14 @@ export class CustomersService {
 
   async create(createCustomerDto: CreateCustomerDto): Promise<PrismaCustomer> {
     try {
+      const existingCustomer = await this.findByCpfCnpj(
+        createCustomerDto.cpfCnpj,
+      );
+
+      if (existingCustomer) {
+        throw new Error('CPF/CNPJ já cadastrado');
+      }
+
       const response: { data: Customer } =
         await this.asaasService.createCustomer(createCustomerDto);
       const customer = response.data;
@@ -53,6 +61,21 @@ export class CustomersService {
     }
   }
 
+  async findById(id: string): Promise<PrismaCustomer> {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+      include: {
+        payments: true,
+      },
+    });
+
+    if (!customer) {
+      throw new Error('Cliente não encontrado');
+    }
+
+    return customer;
+  }
+
   async findByCpfCnpj(cpfCnpj: string): Promise<PrismaCustomer> {
     try {
       const customer = await this.prisma.customer.findUnique({
@@ -76,5 +99,9 @@ export class CustomersService {
         `Erro ao buscar o cliente: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
+  }
+
+  async findAll(): Promise<PrismaCustomer[]> {
+    return this.prisma.customer.findMany();
   }
 }

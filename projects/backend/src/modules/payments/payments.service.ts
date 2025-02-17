@@ -112,23 +112,28 @@ export class PaymentsService {
     }
   }
 
+  async findByCustomerId(customerId: string): Promise<PrismaPayment[]> {
+    return this.prisma.payment.findMany({
+      where: { customerId },
+    });
+  }
+
   async handleWebhook(webhook: PaymentWebhook): Promise<void> {
     this.logger.log(
       `Recebido webhook: ${webhook.event} para o pagamento ${webhook.payment.id}`,
     );
 
+    let payment: Payment;
     try {
-      const response: Payment = await this.paymentGateway.getPayment(
-        webhook.payment.id,
-      );
+      payment = await this.paymentGateway.getPayment(webhook.payment.id);
 
-      if (!response) {
+      if (!payment) {
         throw new InternalServerErrorException(
           `Pagamento ${webhook.payment.id} não encontrado no gateway`,
         );
       }
 
-      if (response.status !== 'RECEIVED') {
+      if (payment.status !== 'RECEIVED') {
         throw new InternalServerErrorException(
           `Pagamento ${webhook.payment.id} não está com status RECEIVED`,
         );
@@ -143,18 +148,18 @@ export class PaymentsService {
       );
     }
 
+    console.log(payment);
+
     try {
       await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const payment: PrismaPayment = await tx.payment.update({
+        const prismaPayment: PrismaPayment = await tx.payment.update({
           where: { externalId: webhook.payment.id },
           data: {
-            status: webhook.payment.status,
-            paidAt: webhook.payment.paymentDate
-              ? new Date(webhook.payment.paymentDate)
-              : null,
+            status: payment.status,
+            paidAt: payment.paymentDate ? new Date(payment.paymentDate) : null,
           },
         });
-        return payment;
+        return prismaPayment;
       });
 
       this.logger.log(`Pagamento ${webhook.payment.id} atualizado com sucesso`);

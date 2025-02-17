@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link active" href="/">Customers</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/payment">Payment</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5>New Customer</h5>
+          </div>
+          <div class="card-body">
+            <form id="customerForm">
+              <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="name" required>
+              </div>
+              <div class="mb-3">
+                <label for="cpfCnpj" class="form-label">CPF/CNPJ</label>
+                <input type="text" class="form-control" id="cpfCnpj" required>
+              </div>
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5>Customers List</h5>
+          </div>
+          <div class="card-body">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>CPF/CNPJ</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customersList">
+                <!-- Customer data will be dynamically inserted here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/assets/js/functions.js"></script>
+    <script>
+      $(document).ready(function() {
+        addToast();
+
+        function setCustomers(customers) {
+          const tbody = $('#customersList');
+          tbody.empty();
+          
+          customers.forEach(customer => {
+            tbody.append(`
+              <tr>
+                <td>${customer.name}</td>
+                <td>${customer.cpfCnpj}</td>
+                <td>${customer.email}</td>
+                <td>
+                  <a class="btn btn-primary" href="/customer?id=${customer.id}">Ver</a>
+                </td>
+              </tr>
+            `);
+          });
+        }
+        
+        loadCustomers(setCustomers);
+
+        $('#customerForm').submit(function(e) {
+          e.preventDefault();
+          
+          const customer = {
+            name: $('#name').val(),
+            cpfCnpj: $('#cpfCnpj').val(),
+            email: $('#email').val()
+          };
+
+          saveCustomer(customer, function(response) {
+            showToast('Cliente salvo com sucesso!');
+            loadCustomers(setCustomers);
+          });
+
+          this.reset();
+        });
+      });
+    </script>
+  </div>
+
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
