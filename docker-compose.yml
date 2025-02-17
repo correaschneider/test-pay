@@ -18,7 +18,7 @@ services:
       - database
     networks:
       - pay-network
-    command: sh -c "npm install && npm run start:dev"
+    command: sh -c "npm install && npx prisma migrate dev && npm run start:dev"
 
   database:
     image: mysql:8
@@ -34,21 +34,6 @@ services:
     restart: always
     networks:
       - pay-network
-
-  # frontend:
-  #   build:
-  #     context: .docker/frontend
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - ${NEXT_PUBLIC_FRONTEND_PORT}:${NEXT_PUBLIC_FRONTEND_PORT}
-  #   volumes:
-  #     - ./projects/frontend:/app
-  #     - ./.env:/app/.env.local
-  #   depends_on:
-  #     - backend
-  #   command: sh -c "npm install && npx next dev --port ${NEXT_PUBLIC_FRONTEND_PORT}"
-  #   networks:
-  #     - pay-network
 
   frontend:
     image: nginx:latest
